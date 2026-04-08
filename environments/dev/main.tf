@@ -2,7 +2,7 @@
 module "vpc" {
   source = "../../modules/vpc"
 
-  project_id    = "gke-petproject-2026"
+  project_id    = var.project_id
   network_name  = "main-vpc"
   region        = "europe-west1"
   subnet_cidr   = "10.0.0.0/28"
@@ -12,13 +12,13 @@ module "vpc" {
 
 module "iam" {
   source     = "../../modules/iam"
-  project_id = "gke-petproject-2026"
+  project_id = var.project_id
 }
 
 module "db" {
   source = "../../modules/db"
 
-  project_id = "gke-petproject-2026"
+  project_id = var.project_id
   vpc_id     = module.vpc.network_id
   region     = "europe-west1"
 }
@@ -26,7 +26,7 @@ module "db" {
 module "gke" {
   source = "../../modules/gke"
 
-  project_id = "gke-petproject-2026"
+  project_id = var.project_id
   region     = "europe-west1-b"
 
   network_name = module.vpc.network_name
