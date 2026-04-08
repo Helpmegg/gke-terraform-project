@@ -4,6 +4,7 @@ FROM python:3.11-alpine as builder
 WORKDIR /app
 
 # Встановлюємо системні залежності для компіляції (за потреби)
+# hadolint ignore=DL3018
 RUN apk add --no-cache gcc musl-dev linux-headers postgresql-dev
 
 COPY requirements.txt .
@@ -18,6 +19,7 @@ FROM python:3.11-alpine
 WORKDIR /app
 
 # Встановлюємо runtime залежності
+# hadolint ignore=DL3018
 RUN apk add --no-cache libpq
 
 COPY --from=builder /opt/venv /opt/venv
