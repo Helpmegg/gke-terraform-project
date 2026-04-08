@@ -1,5 +1,5 @@
 output "instance_connection_name" {
-  description = "The connection name of the master instance to be used in connection strings."
+  description = "The connection name of the Cloud SQL instance."
   value       = google_sql_database_instance.main.connection_name
 }
 
@@ -14,6 +14,6 @@ output "db_user" {
 }
 
 output "db_password_secret_id" {
-  description = "The ID of the secret in Secret Manager containing the database password."
+  description = "The ID of the Secret Manager secret containing the DB password."
   value       = google_secret_manager_secret.db_pass.secret_id
 }

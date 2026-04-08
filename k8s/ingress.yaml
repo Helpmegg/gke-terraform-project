@@ -15,4 +15,4 @@ spec:
               service:
                 name: web-app-svc # Назва вашого сервісу
                 port:
-                  number: 80 # Порт, який слухає сервіс
+                 number: 80 # Порт, який слухає сервіс

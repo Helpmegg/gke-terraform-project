@@ -1,18 +1,28 @@
-output "network_self_link" {
-  value = google_compute_network.main.self_link
+
+output "network_name" {
+  description = "The name of the VPC being created"
+  value       = google_compute_network.main.name
 }
 
-output "subnet_self_link" {
-  value = google_compute_subnetwork.private.self_link
-}
-
-
+#
 output "network_id" {
+  description = "The ID of the VPC being created"
   value       = google_compute_network.main.id
-  description = "ID VPC"
 }
 
-output "peering_completed" {
-  value       = google_service_networking_connection.default.id
-  description = "Peering complete"
+
+output "network_self_link" {
+  description = "The URI of the VPC being created"
+  value       = google_compute_network.main.self_link
+}
+
+
+output "subnet_name" {
+  description = "The name of the subnet being created"
+  value       = google_compute_subnetwork.private.name
+}
+
+output "subnet_region" {
+  description = "The region where the subnet is created"
+  value       = google_compute_subnetwork.private.region
 }

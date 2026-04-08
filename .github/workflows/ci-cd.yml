@@ -1,0 +1,98 @@
+name: Deploy to GKE
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GCP_PROJECT_ID: "gke-petproject-2026"
+  GKE_CLUSTER: "gke-pet-cluster"
+  GKE_REGION: "europe-west1"
+  TF_WORKING_DIR: "environments/dev"
+  K8S_DIR: "k8s"
+  IMAGE_NAME: "europe-west1-docker.pkg.dev/gke-petproject-2026/my-repo/my-app"
+
+jobs:
+  lint-and-scan:
+    name: Lint and Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_version: latest
+
+      - name: Run TFLint
+        run: |
+          cd ${{ env.TF_WORKING_DIR }}
+          tflint --init
+          tflint -f compact
+
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: app/Dockerfile
+
+      - name: Run Trivy vulnerability scanner on Repo
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+  deploy:
+    name: Deploy Infrastructure and Application
+    needs: lint-and-scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Terraform Apply
+        run: |
+          cd ${{ env.TF_WORKING_DIR }}
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Get Terraform Outputs
+        id: terraform-outputs
+        run: |
+          cd ${{ env.TF_WORKING_DIR }}
+          echo "db_instance_connection_name=$(terraform output -raw db_instance_connection_name)" >> $GITHUB_OUTPUT
+          echo "db_password_secret_id=$(terraform output -raw db_password_secret_id)" >> $GITHUB_OUTPUT
+
+      - name: Get GKE credentials
+        run: gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --region ${{ env.GKE_REGION }}
+
+      - name: Deploy to GKE
+        run: |
+          sed -i "s|<INSTANCE_CONNECTION_NAME>|${{ steps.terraform-outputs.outputs.db_instance_connection_name }}|g" ${{ env.K8S_DIR }}/deployment.yaml
+          sed -i "s|<DB_PASSWORD_SECRET_ID>|${{ steps.terraform-outputs.outputs.db_password_secret_id }}|g" ${{ env.K8S_DIR }}/deployment.yaml
+          
+          echo "--- Patched deployment.yaml ---"
+          cat ${{ env.K8S_DIR }}/deployment.yaml
+          echo "-------------------------------"
+
+          kubectl apply -f ${{ env.K8S_DIR }}/

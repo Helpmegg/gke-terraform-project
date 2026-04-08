@@ -1,15 +1,6 @@
+# environments/dev/variables.tf
+
 variable "project_id" {
-  description = "gke-tf-denis-2026"
+  description = "The ID of the Google Cloud project"
   type        = string
-}
-
-variable "region" {
-  description = "Region"
-  type        = string
-  default     = "us-central1"
-}
-
-variable "db_password" {
-  type        = string
-  sensitive   = true
 }

@@ -1,8 +1,16 @@
-variable "region" { type = string }
-variable "network_id" { type = string }
-variable "db_password" {
-  type      = string
-  sensitive = true
+# modules/database/variables.tf
+
+variable "project_id" {
+  description = "ID вашого проекту Google Cloud"
+  type        = string
 }
-# Ця змінна потрібна, щоб БД не почала створюватися раніше, ніж налаштується Peering
-variable "db_network_dependency" { type = any }
+
+variable "region" {
+  description = "Регіон для бази даних (наприклад, europe-west1)"
+  type        = string
+}
+
+variable "vpc_id" {
+  description = "ID мережі VPC (береться з модуля VPC)"
+  type        = string
+}

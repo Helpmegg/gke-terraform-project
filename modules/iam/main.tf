@@ -1,42 +1,30 @@
-# 1. Створення VPC
-resource "google_compute_network" "main" {
-  name                    = var.network_name
-  auto_create_subnetworks = false #
+
+resource "google_service_account" "gke_sa" {
+  account_id   = "gke-nodes-sa"
+  display_name = "GKE Nodes Service Account"
 }
 
-# 2. Створення підмережі (Subnet)
-resource "google_compute_subnetwork" "private" {
-  name          = "${var.network_name}-private-subnet"
-  ip_cidr_range = var.subnet_cidr
-  region        = var.region
-  network       = google_compute_network.main.id
-
-
-  private_ip_google_access = true
-
-  #
-  secondary_ip_range {
-    range_name    = "k8s-pods-range"
-    ip_cidr_range = var.pods_cidr
-  }
-  secondary_ip_range {
-    range_name    = "k8s-services-range"
-    ip_cidr_range = var.services_cidr
-  }
+resource "google_project_iam_member" "gke_logging" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.gke_sa.email}"
 }
 
-
-resource "google_compute_router" "router" {
-  name    = "${var.network_name}-router"
-  region  = var.region
-  network = google_compute_network.main.id
+resource "google_project_iam_member" "gke_metrics" {
+  project = var.project_id
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.gke_sa.email}"
 }
 
+resource "google_project_iam_member" "artifact_registry" {
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.gke_sa.email}"
+}
 
-resource "google_compute_router_nat" "nat" {
-  name                               = "${var.network_name}-nat"
-  router                             = google_compute_router.router.name
-  region                             = var.region
-  nat_ip_allocate_option             = "AUTO_ONLY"
-  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+# Дозвіл для GSA читати секрети
+resource "google_project_iam_member" "secret_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.gke_sa.email}"
 }

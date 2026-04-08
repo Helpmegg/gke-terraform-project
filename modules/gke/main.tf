@@ -1,50 +1,69 @@
-
+# 1. Сам Кластер (Control Plane)
 resource "google_container_cluster" "primary" {
-  name     = "gke-production-cluster"
+  name     = "gke-pet-cluster"
   location = var.region
 
-
-  remove_default_node_pool = true
   initial_node_count       = 1
+  remove_default_node_pool = true
+  deletion_protection      = false
 
-  network    = var.network
-  subnetwork = var.subnetwork
+  network    = var.network_name
+  subnetwork = var.subnet_name
 
-
-  networking_mode = "VPC_NATIVE"
   ip_allocation_policy {
-    cluster_secondary_range_name  = "k8s-pod-range"
-    services_secondary_range_name = "k8s-service-range"
+    cluster_secondary_range_name  = var.pods_range_name
+    services_secondary_range_name = var.services_range_name
+  }
+
+  private_cluster_config {
+    enable_private_nodes    = true
+    enable_private_endpoint = true
+    master_ipv4_cidr_block  = "172.16.0.0/28"
+  }
+
+  # Увімкнення Workload Identity
+  workload_identity_config {
+    workload_pool = "${var.project_id}.svc.id.goog"
   }
 }
 
-
-resource "google_container_node_pool" "system" {
-  name       = "system-pool"
-  cluster    = google_container_cluster.primary.id
-  node_count = 1
-
-  node_config {
-    machine_type    = "e2-medium"
-    service_account = google_service_account.gke_nodes.email
-    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
-    disk_size_gb    = 30
-    disk_type    = "pd-standard"
-  }
-}
-
-
-resource "google_container_node_pool" "workload" {
+resource "google_container_node_pool" "workload_nodes" {
   name       = "workload-pool"
-  cluster    = google_container_cluster.primary.id
-  node_count = 1
+  location   = var.region
+  cluster    = google_container_cluster.primary.name
+  node_count = 2
 
   node_config {
-    spot            = true
-    machine_type    = "e2-small"
-    service_account = google_service_account.gke_nodes.email
-    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+    spot         = true
+    machine_type = "e2-medium"
     disk_size_gb = 30
     disk_type    = "pd-standard"
+
+    service_account = var.service_account_email
+    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+
+    # Додаємо taint, щоб системні поди не шедулилися сюди за замовчуванням (опціонально)
+    taint {
+      key    = "workload"
+      value  = "true"
+      effect = "NO_SCHEDULE"
+    }
+  }
+}
+
+resource "google_container_node_pool" "system_nodes" {
+  name       = "system-pool"
+  location   = var.region
+  cluster    = google_container_cluster.primary.name
+  node_count = 1
+
+  node_config {
+    spot         = false # Системні поди краще не на спотах для стабільності
+    machine_type = "e2-medium"
+    disk_type    = "pd-standard"
+    disk_size_gb = 30
+
+    service_account = var.service_account_email
+    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
   }
 }
