@@ -1,62 +1,90 @@
 import os
-from flask import Flask, render_template, request, redirect
-from google.cloud.sql.connector import Connector
-import sqlalchemy
+from datetime import datetime
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, func
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from flask import Flask, request
 
+# --- Функція для читання секрету з файлу ---
+def get_secret(secret_name, default_value=None):
+    """Читає секрет з файлу, змонтованого CSI драйвером."""
+    secret_path = f"/secrets/{secret_name}"
+    try:
+        with open(secret_path, 'r') as f:
+            return f.read().strip()
+    except IOError:
+        print(f"Warning: Secret file not found at {secret_path}. Using default value.")
+        return default_value
+
+# --- Налаштування бази даних ---
+DB_USER = os.environ.get("DB_USER", "app_user")
+# Читаємо пароль з файлу, а не зі змінної оточення
+DB_PASS = get_secret("db-password", "default_password")
+DB_NAME = os.environ.get("DB_NAME", "app_db")
+DB_HOST = os.environ.get("DB_HOST", "127.0.0.1") # Підключення через Cloud SQL Proxy
+DB_PORT = os.environ.get("DB_PORT", "5432")
+
+# Рядок підключення для PostgreSQL
+DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# --- Модель SQLAlchemy ---
+class Visit(Base):
+    __tablename__ = "visits"
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    ip_address = Column(String, index=True)
+
+# --- Ініціалізація Flask ---
 app = Flask(__name__)
 
-
-INSTANCE_NAME = os.environ.get("INSTANCE_CONNECTION_NAME")
-DB_USER = os.environ.get("DB_USER")
-DB_PASS = os.environ.get("DB_PASS")
-DB_NAME = os.environ.get("DB_NAME")
-
-
-connector = Connector()
-
-def getconn():
-    conn = connector.connect(
-        INSTANCE_NAME,
-        "pg8000",
-        user=DB_USER,
-        password=DB_PASS,
-        db=DB_NAME,
-        ip_type="private"
-    )
-    return conn
-
-
-pool = sqlalchemy.create_engine(
-    "postgresql+pg8000://",
-    creator=getconn,
-)
-
-
-with pool.connect() as conn:
-    conn.execute(sqlalchemy.text(
-        "CREATE TABLE IF NOT EXISTS entries (id SERIAL PRIMARY KEY, name TEXT, message TEXT);"
-    ))
-    conn.commit()
-
-@app.route("/")
+# --- Логіка додатку ---
+@app.route('/')
 def index():
-    with pool.connect() as conn:
-        entries = conn.execute(sqlalchemy.text("SELECT name, message FROM entries")).fetchall()
-    return f"<h1>Cloud Guestbook</h1>" + "".join([f"<p><b>{e[0]}:</b> {e[1]}</p>" for e in entries]) + \
-           '<form action="/post" method="post"><input name="name" placeholder="Ім\'я"><br><textarea name="msg"></textarea><br><button>Відправити</button></form>'
+    """
+    При кожному візиті:
+    1. Реєструє візит у базі даних.
+    2. Підраховує загальну кількість візитів.
+    3. Повертає вітальне повідомлення з лічильником.
+    """
+    db = SessionLocal()
+    try:
+        # Отримання IP-адреси. Враховуємо, що додаток за проксі (GKE Ingress).
+        if request.headers.getlist("X-Forwarded-For"):
+            ip_addr = request.headers.getlist("X-Forwarded-For")[0]
+        else:
+            ip_addr = request.remote_addr
 
-@app.route("/post", methods=["POST"])
-def post():
-    name = request.form.get("name")
-    msg = request.form.get("msg")
-    with pool.connect() as conn:
-        conn.execute(sqlalchemy.text("INSERT INTO entries (name, message) VALUES (:n, :m)"), {"n": name, "m": msg})
-        conn.commit()
-    return redirect("/")
+        # Створення нового запису про візит
+        new_visit = Visit(ip_address=ip_addr)
+        db.add(new_visit)
+        db.commit()
 
-@app.route("/health")
-def health():
-    return "OK", 200
+        # Підрахунок загальної кількості візитів
+        total_visits = db.query(func.count(Visit.id)).scalar()
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+        return f"<h1>Hello! This site has been visited {total_visits} times.</h1>"
+
+    except Exception as e:
+        # У випадку помилки підключення до БД, повертаємо повідомлення про помилку
+        db.rollback()
+        return f"<h1>Error connecting to the database:</h1><p>{e}</p>", 500
+    finally:
+        db.close()
+
+def create_tables():
+    """Створює таблиці в базі даних, якщо їх ще немає."""
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("Tables created successfully (if they didn't exist).")
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+
+if __name__ == '__main__':
+    # Створюємо таблиці при першому запуску
+    create_tables()
+    # Запускаємо додаток (для локальної розробки)
+    app.run(host='0.0.0.0', port=8080)
