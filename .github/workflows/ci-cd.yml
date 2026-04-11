@@ -7,6 +7,7 @@ on:
 
 env:
   GCP_PROJECT_ID: "gke-petproject-2026"
+  TF_VAR_project_id: "gke-petproject-2026"
   GKE_CLUSTER: "gke-pet-cluster"
   GKE_REGION: "europe-west1"
   TF_WORKING_DIR: "environments/dev"
