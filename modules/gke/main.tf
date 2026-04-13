@@ -21,6 +21,14 @@ resource "google_container_cluster" "primary" {
     master_ipv4_cidr_block  = "172.16.0.0/28"
   }
 
+  master_authorized_networks_config {
+    cidr_blocks {
+      cidr_block   = "10.0.0.0/8"
+      display_name = "VPC CIDR"
+    }
+  }
+
+
   # Увімкнення Workload Identity
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
