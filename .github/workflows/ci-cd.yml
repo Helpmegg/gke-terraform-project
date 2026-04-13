@@ -9,7 +9,7 @@ env:
   GCP_PROJECT_ID: "gke-petproject-2026"
   TF_VAR_project_id: "gke-petproject-2026"
   GKE_CLUSTER: "gke-pet-cluster"
-  GKE_REGION: "europe-west1"
+  GKE_REGION: "europe-west1-b"
   TF_WORKING_DIR: "environments/dev"
   K8S_DIR: "k8s"
   IMAGE_NAME: "europe-west1-docker.pkg.dev/gke-petproject-2026/my-repo/my-app"
@@ -95,7 +95,7 @@ jobs:
           echo "db_password_secret_id=$(terraform output -raw db_password_secret_id)" >> $GITHUB_OUTPUT
 
       - name: Get GKE credentials
-        run: gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --region ${{ env.GKE_REGION }}
+        run: gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --zone ${{ env.GKE_REGION }}
 
       - name: Deploy to GKE
         run: |
