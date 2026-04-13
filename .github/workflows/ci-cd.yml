@@ -27,6 +27,10 @@ jobs:
         with:
           tflint_version: latest
 
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false # Це вимкне спроби GitHub "розумно" парсити вивід
+
       - name: Run TFLint
         run: |
           cd ${{ env.TF_WORKING_DIR }}
