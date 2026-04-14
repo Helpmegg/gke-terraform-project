@@ -13,13 +13,13 @@ spec:
     metadata:
       labels:
         app: web
+    spec:
       # Додаємо toleration, щоб поди могли шедулитися на workload-pool (який ми за-taint-или)
       tolerations:
         - key: "workload"
           operator: "Equal"
           value: "true"
           effect: "NoSchedule"
-    spec:
       serviceAccountName: web-app-ksa
       securityContext:
         runAsNonRoot: true
