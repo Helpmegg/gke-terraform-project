@@ -13,6 +13,7 @@ env:
   TF_WORKING_DIR: "environments/dev"
   K8S_DIR: "k8s"
   IMAGE_NAME: "europe-west1-docker.pkg.dev/gke-petproject-2026/my-repo/my-app"
+  USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
 
 jobs:
   lint-and-scan:
@@ -93,6 +94,9 @@ jobs:
           cd ${{ env.TF_WORKING_DIR }}
           echo "db_instance_connection_name=$(terraform output -raw db_instance_connection_name)" >> $GITHUB_OUTPUT
           echo "db_password_secret_id=$(terraform output -raw db_password_secret_id)" >> $GITHUB_OUTPUT
+
+      - name: Install gke-gcloud-auth-plugin
+        run: gcloud components install gke-gcloud-auth-plugin --quiet
 
       - name: Get GKE credentials
         run: gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --zone ${{ env.GKE_REGION }}
