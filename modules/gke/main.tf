@@ -33,6 +33,15 @@ resource "google_container_cluster" "primary" {
   }
 
 
+  # Вмикаємо Cloud Operations Suite (Logging & Monitoring)
+  logging_config {
+    enable_components = ["SYSTEM_COMPONENTS", "WORKLOADS"]
+  }
+
+  monitoring_config {
+    enable_components = ["SYSTEM_COMPONENTS"]
+  }
+
   # Увімкнення Workload Identity
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
