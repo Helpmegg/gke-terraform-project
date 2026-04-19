@@ -28,3 +28,10 @@ resource "google_project_iam_member" "secret_accessor" {
   role    = "roles/secretmanager.secretAccessor"
   member  = "serviceAccount:${google_service_account.gke_sa.email}"
 }
+
+# Дозвіл для GSA підключатися до Cloud SQL
+resource "google_project_iam_member" "cloudsql_client" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.gke_sa.email}"
+}

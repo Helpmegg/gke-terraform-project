@@ -75,6 +75,11 @@ def index():
     finally:
         db.close()
 
+@app.route('/healthz')
+def healthz():
+    """Ендпоінт для перевірки стану (Health Check)."""
+    return "OK", 200
+
 def create_tables():
     """Створює таблиці в базі даних, якщо їх ще немає."""
     try:
