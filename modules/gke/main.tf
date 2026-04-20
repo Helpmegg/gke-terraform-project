@@ -1,5 +1,6 @@
 # 1. Сам Кластер (Control Plane)
 resource "google_container_cluster" "primary" {
+  provider = google-beta
   name     = "gke-pet-cluster"
   location = var.region
 
