@@ -72,13 +72,6 @@ resource "google_container_node_pool" "workload_nodes" {
     workload_metadata_config {
       mode = "GKE_METADATA"
     }
-
-    # Додаємо taint, щоб системні поди не шедулилися сюди за замовчуванням (опціонально)
-    taint {
-      key    = "workload"
-      value  = "true"
-      effect = "NO_SCHEDULE"
-    }
   }
 }
 

@@ -16,4 +16,4 @@ spec:
   parameters:
     secrets: |
       - resourceName: "projects/gke-petproject-2026/secrets/<DB_PASSWORD_SECRET_ID>/versions/latest"
-        path: "password.txt"
+        path: "db-password"
