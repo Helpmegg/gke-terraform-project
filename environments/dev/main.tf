@@ -42,3 +42,9 @@ module "gke" {
   db_user                     = module.db.db_user
   db_password_secret_id       = module.db.db_password_secret_id
 }
+
+module "registry" {
+  source     = "../../modules/registry"
+  project_id = var.project_id
+  region     = "europe-west1"
+}

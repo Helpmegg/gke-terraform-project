@@ -1,7 +1,7 @@
 resource "google_artifact_registry_repository" "my_repo" {
   location      = var.region
-  repository_id = "guestbook-repo"
-  description   = "Docker repository for Guestbook app"
+  repository_id = "my-repo"
+  description   = "Docker repository"
   format        = "DOCKER"
 }
 
