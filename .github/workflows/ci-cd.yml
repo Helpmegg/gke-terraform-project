@@ -124,7 +124,7 @@ jobs:
           echo "-------------------------------"
 
           kubectl apply -f ${{ env.K8S_DIR }}/
-          kubectl rollout status deployment/web-app --timeout=3m || {
+          kubectl rollout status deployment/web-app --timeout=10m || {
             echo "::error::Rollout failed! Fetching events for diagnosis:"
             kubectl get events --sort-by='.metadata.creationTimestamp' | tail -n 20
             exit 1
