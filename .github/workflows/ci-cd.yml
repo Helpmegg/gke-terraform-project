@@ -127,5 +127,7 @@ jobs:
           kubectl rollout status deployment/web-app --timeout=10m || {
             echo "::error::Rollout failed! Fetching events for diagnosis:"
             kubectl get events --sort-by='.metadata.creationTimestamp' | tail -n 20
+            echo "::error::Fetching logs from the crashing app container:"
+            kubectl logs deployment/web-app -c app --tail=50 || true
             exit 1
           }
