@@ -12,7 +12,7 @@ kind: SecretProviderClass
 metadata:
   name: db-credentials-provider
 spec:
-  provider: gcp
+  provider: gke
   parameters:
     secrets: |
       - resourceName: "projects/gke-petproject-2026/secrets/<DB_PASSWORD_SECRET_ID>/versions/latest"
