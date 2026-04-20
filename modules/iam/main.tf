@@ -35,3 +35,20 @@ resource "google_project_iam_member" "cloudsql_client" {
   role    = "roles/cloudsql.client"
   member  = "serviceAccount:${google_service_account.gke_sa.email}"
 }
+
+# Забезпечує роботу Workload Identity
+resource "google_project_service" "iam_credentials" {
+  project            = var.project_id
+  service            = "iamcredentials.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Ключовий момент Zero-Trust: Дозволяємо KSA (web-app-ksa) діяти як GSA (gke-nodes-sa)
+resource "google_service_account_iam_binding" "workload_identity_binding" {
+  service_account_id = google_service_account.gke_sa.name
+  role               = "roles/iam.workloadIdentityUser"
+
+  members = [
+    "serviceAccount:${var.project_id}.svc.id.goog[default/web-app-ksa]"
+  ]
+}

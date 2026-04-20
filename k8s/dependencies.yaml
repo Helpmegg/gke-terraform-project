@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: web-app-ksa
+  namespace: default
+  annotations:
+    iam.gke.io/gcp-service-account: gke-nodes-sa@gke-petproject-2026.iam.gserviceaccount.com
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: db-credentials-provider
+spec:
+  provider: gcp
+  parameters:
+    secrets: |
+      - resourceName: "projects/gke-petproject-2026/secrets/<DB_PASSWORD_SECRET_ID>/versions/latest"
+        path: "password.txt"

@@ -117,11 +117,15 @@ jobs:
           IMAGE_TAG=$(git rev-parse --short HEAD)
           sed -i "s|europe-west1-docker.pkg.dev/gke-petproject-2026/my-repo/my-app:latest|${{ env.IMAGE_NAME }}:${IMAGE_TAG}|g" ${{ env.K8S_DIR }}/deployment.yaml
           sed -i "s|<INSTANCE_CONNECTION_NAME>|${{ steps.terraform-outputs.outputs.db_instance_connection_name }}|g" ${{ env.K8S_DIR }}/deployment.yaml
-          sed -i "s|<DB_PASSWORD_SECRET_ID>|${{ steps.terraform-outputs.outputs.db_password_secret_id }}|g" ${{ env.K8S_DIR }}/deployment.yaml
+          sed -i "s|<DB_PASSWORD_SECRET_ID>|${{ steps.terraform-outputs.outputs.db_password_secret_id }}|g" ${{ env.K8S_DIR }}/dependencies.yaml
           
           echo "--- Patched deployment.yaml ---"
           cat ${{ env.K8S_DIR }}/deployment.yaml
           echo "-------------------------------"
 
           kubectl apply -f ${{ env.K8S_DIR }}/
-          kubectl rollout status deployment/web-app
+          kubectl rollout status deployment/web-app --timeout=3m || {
+            echo "::error::Rollout failed! Fetching events for diagnosis:"
+            kubectl get events --sort-by='.metadata.creationTimestamp' | tail -n 20
+            exit 1
+          }

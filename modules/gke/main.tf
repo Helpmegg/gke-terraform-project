@@ -46,6 +46,11 @@ resource "google_container_cluster" "primary" {
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
+
+  # Дозволяє використання CSI драйверу для управління безпечним монтуванням секретів
+  secret_manager_config {
+    enabled = true
+  }
 }
 
 resource "google_container_node_pool" "workload_nodes" {

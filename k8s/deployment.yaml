@@ -86,7 +86,7 @@ spec:
       volumes:
         - name: secret-volume
           csi:
-            driver: "secrets.csi.gke.io"
+            driver: "secrets-store.csi.k8s.io"
             readOnly: true
             volumeAttributes:
-              secretProviderClass: "<DB_PASSWORD_SECRET_ID>"
+              secretProviderClass: "db-credentials-provider"
