@@ -62,7 +62,7 @@ resource "google_container_node_pool" "workload_nodes" {
 
   node_config {
     spot         = true
-    machine_type = "e2-medium"
+    machine_type = "e2-standard-2"
     disk_size_gb = 30
     disk_type    = "pd-standard"
 
@@ -83,7 +83,7 @@ resource "google_container_node_pool" "system_nodes" {
 
   node_config {
     spot         = false # Системні поди краще не на спотах для стабільності
-    machine_type = "e2-medium"
+    machine_type = "e2-standard-2"
     disk_type    = "pd-standard"
     disk_size_gb = 30
 
