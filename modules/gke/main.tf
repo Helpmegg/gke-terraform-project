@@ -68,6 +68,7 @@ resource "google_container_node_pool" "workload_nodes" {
 
     service_account = var.service_account_email
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+    tags            = ["gke-node"]
 
     workload_metadata_config {
       mode = "GKE_METADATA"
@@ -89,6 +90,7 @@ resource "google_container_node_pool" "system_nodes" {
 
     service_account = var.service_account_email
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+    tags            = ["gke-node"]
 
     workload_metadata_config {
       mode = "GKE_METADATA"
