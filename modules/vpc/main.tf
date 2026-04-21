@@ -56,18 +56,3 @@ resource "google_service_networking_connection" "private_vpc_connection" {
   reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
 }
 
-# 3. Правило Firewall для Health Checks від Google (Load Balancer)
-resource "google_compute_firewall" "allow_health_checks" {
-  project = var.project_id
-  name    = "${var.network_name}-allow-health-checks"
-  network = google_compute_network.main.name
-
-  allow {
-    protocol = "tcp"
-    # 8080 порт додатку, а 30000-32767 - це діапазон NodePort для GCE Ingress
-    ports    = ["8080", "30000-32767"]
-  }
-
-  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
-  target_tags   = ["gke-node"]
-}
