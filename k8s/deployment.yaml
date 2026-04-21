@@ -37,6 +37,11 @@ spec:
             - name: secret-volume
               mountPath: "/secrets"
               readOnly: true
+            # Примонтовано tmp-volume для запису тимчасових файлів Gunicorn (heartbeats).
+            # Це дозволяє використовувати readOnlyRootFilesystem: true для головної ФС, 
+            # відповідаючи принципу "Незмінної інфраструктури" (Immutable Infrastructure).
+            - name: tmp-volume
+              mountPath: "/tmp"
           resources:
             requests:
               cpu: "100m"
@@ -84,3 +89,6 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: "db-credentials-provider"
+        # Том типу emptyDir для зберігання тимчасових даних під час життя Pod'а
+        - name: tmp-volume
+          emptyDir: {}
