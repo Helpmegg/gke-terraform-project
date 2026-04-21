@@ -15,5 +15,8 @@ spec:
   provider: gke
   parameters:
     secrets: |
-      - resourceName: "projects/gke-petproject-2026/secrets/<DB_PASSWORD_SECRET_ID>/versions/latest"
+      # ЗАМІНИТИ <SECRET_ID> на реальне ім'я секрету вигляду: db-password-XXXXXXXX
+      # Отримати командою: terraform -chdir=environments/dev output -raw db_password_secret_id
+      # Або через gcloud: gcloud secrets list --filter="name:db-password" --format="value(name)"
+      - resourceName: "projects/gke-petproject-2026/secrets/db-password-2fc48b59/versions/latest"
         path: "db-password"

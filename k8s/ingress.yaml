@@ -2,6 +2,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: web-app-ingress
+  annotations:
+    # Підключаємо BackendConfig для кастомного health check на /healthz
+    # Без цієї анотації GCE Ingress ігнорує web-app-backendconfig!
+    cloud.google.com/backend-config: '{"default": "web-app-backendconfig"}'
 spec:
   ingressClassName: "gce"
   rules:

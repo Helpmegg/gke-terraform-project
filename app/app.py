@@ -21,15 +21,32 @@ DB_USER = os.environ.get("DB_USER", "app_user")
 # Читаємо пароль з файлу, а не зі змінної оточення
 DB_PASS = get_secret("db-password", "default_password")
 DB_NAME = os.environ.get("DB_NAME", "app_db")
-DB_HOST = os.environ.get("DB_HOST", "127.0.0.1") # Підключення через Cloud SQL Proxy
+DB_HOST = os.environ.get("DB_HOST", "127.0.0.1")  # Підключення через Cloud SQL Proxy
 DB_PORT = os.environ.get("DB_PORT", "5432")
 
 # Рядок підключення для PostgreSQL
 DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# --- Lazy ініціалізація БД ---
+# engine та SessionLocal створюються при першому звернені, а не при старті Gunicorn.
+# Це виключає краш Gunicorn якщо cloud-sql-proxy ще не готовий.
+_engine = None
+_SessionLocal = None
 Base = declarative_base()
+
+def get_engine():
+    """Повертає (або lazy-створює) SQLAlchemy engine."""
+    global _engine
+    if _engine is None:
+        _engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+    return _engine
+
+def get_session():
+    """Повертає (або lazy-створює) SQLAlchemy session factory."""
+    global _SessionLocal
+    if _SessionLocal is None:
+        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
+    return _SessionLocal()
 
 # --- Модель SQLAlchemy ---
 class Visit(Base):
@@ -50,8 +67,11 @@ def index():
     2. Підраховує загальну кількість візитів.
     3. Повертає вітальне повідомлення з лічильником.
     """
-    db = SessionLocal()
+    db = get_session()
     try:
+        # Створюємо таблиці якщо їх ще немає (перший запит)
+        Base.metadata.create_all(bind=get_engine())
+
         # Отримання IP-адреси. Враховуємо, що додаток за проксі (GKE Ingress).
         if request.headers.getlist("X-Forwarded-For"):
             ip_addr = request.headers.getlist("X-Forwarded-For")[0]
@@ -69,27 +89,21 @@ def index():
         return f"<h1>Hello! This site has been visited {total_visits} times.</h1>"
 
     except Exception as e:
-        # У випадку помилки підключення до БД, повертаємо повідомлення про помилку
+        # У випадку помилки підключення до БД, повертаємо HTTP 503
         db.rollback()
-        return f"<h1>Error connecting to the database:</h1><p>{e}</p>", 500
+        print(f"Database error: {e}")
+        return f"<h1>Service temporarily unavailable.</h1><p>Database error: {e}</p>", 503
     finally:
         db.close()
 
 @app.route('/healthz')
 def healthz():
-    """Ендпоінт для перевірки стану (Health Check)."""
+    """
+    Ендпоінт для перевірки стану (Health Check).
+    Завжди повертає 200 OK — додаток живий якщо gunicorn запущений.
+    Перевірка БД тут НЕ виконується щоб health check не залежав від стану БД.
+    """
     return "OK", 200
-
-def create_tables():
-    """Створює таблиці в базі даних, якщо їх ще немає."""
-    try:
-        Base.metadata.create_all(bind=engine)
-        print("Tables created successfully (if they didn't exist).")
-    except Exception as e:
-        print(f"Error creating tables: {e}")
-
-# Створюємо таблиці при завантаженні додатку Gunicorn
-create_tables()
 
 if __name__ == '__main__':
     # Запускаємо додаток (для локальної розробки)
