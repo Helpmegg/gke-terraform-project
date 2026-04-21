@@ -10,4 +10,6 @@ spec:
     unhealthyThreshold: 2
     type: HTTP
     requestPath: /healthz
-    port: 8080
+    # ВАЖЛИВО: має збігатись із nodePort у service.yaml (30080)
+    # GCE LB перевіряє ноду на цьому NodePort, а не на порті контейнера (8080)
+    port: 30080
