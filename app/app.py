@@ -88,8 +88,9 @@ def create_tables():
     except Exception as e:
         print(f"Error creating tables: {e}")
 
+# Створюємо таблиці при завантаженні додатку Gunicorn
+create_tables()
+
 if __name__ == '__main__':
-    # Створюємо таблиці при першому запуску
-    create_tables()
     # Запускаємо додаток (для локальної розробки)
     app.run(host='0.0.0.0', port=8080)
