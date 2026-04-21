@@ -9,7 +9,7 @@ spec:
     healthyThreshold: 2
     unhealthyThreshold: 2
     type: HTTP
-    requestPath: /healthz
-    # ВАЖЛИВО: має збігатись із nodePort у service.yaml (30080)
-    # GCE LB перевіряє ноду на цьому NodePort, а не на порті контейнера (8080)
-    port: 30080
+    requestPath: /
+    # Якщо GKE Ingress використовує NEGs (за замовчуванням), 
+    # health check йде напряму в Pod на порт 8080 (targetPort)
+    port: 8080

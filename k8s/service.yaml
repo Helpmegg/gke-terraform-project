@@ -12,5 +12,4 @@ spec:
   ports:
     - port: 80
       targetPort: 8080    # Перенаправляє трафік на порт 8080 контейнера
-      nodePort: 30080     # Фіксований NodePort — GCE LB health checker звертається до нод саме на цей порт
       protocol: TCP
