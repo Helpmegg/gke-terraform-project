@@ -6,8 +6,8 @@ metadata:
     # Підключаємо BackendConfig для кастомного health check на /healthz
     # Без цієї анотації GCE Ingress ігнорує web-app-backendconfig!
     cloud.google.com/backend-config: '{"default": "web-app-backendconfig"}'
+    kubernetes.io/ingress.class: "gce"
 spec:
-  ingressClassName: "gce"
   rules:
     - http:
         paths:
