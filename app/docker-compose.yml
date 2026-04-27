@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: default_password
+      POSTGRES_DB: app_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+      DB_USER: app_user
+      DB_NAME: app_db
+      # Пароль за замовчуванням "default_password" підтягнеться автоматично з коду
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

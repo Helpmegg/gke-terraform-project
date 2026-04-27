@@ -9,7 +9,7 @@ spec:
     healthyThreshold: 2
     unhealthyThreshold: 2
     type: HTTP
-    requestPath: /
+    requestPath: /healthz
     # Якщо GKE Ingress використовує NEGs (за замовчуванням), 
     # health check йде напряму в Pod на порт 8080 (targetPort)
     port: 8080
