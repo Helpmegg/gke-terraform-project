@@ -86,7 +86,7 @@ jobs:
         run: |
           cd ${{ env.TF_WORKING_DIR }}
           terraform init
-          terraform destroy -auto-approve
+          terraform apply -auto-approve
 
       - name: Get Terraform Outputs
         id: terraform-outputs
