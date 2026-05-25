@@ -21,7 +21,7 @@ spec:
         fsGroup: 2000
       containers:
         - name: app
-          image: "europe-west1-docker.pkg.dev/gke-petproject-2026/my-repo/my-app:latest"
+          image: "europe-west1-docker.pkg.dev/gke-petproject-2026-497418/my-repo/my-app:latest"
           ports:
             - containerPort: 8080
           env:
@@ -79,9 +79,9 @@ spec:
             - "$(DB_INSTANCE_CONNECTION_NAME)"
           env:
             - name: DB_INSTANCE_CONNECTION_NAME
-              # ЗАМІНИТИ на реальний connection name вигляду: gke-petproject-2026:europe-west1:gke-pet-db-XXXXXXXX
+              # ЗАМІНИТИ на реальний connection name вигляду: gke-petproject-2026-497418:europe-west1:gke-pet-db-XXXXXXXX
               # Отримати: terraform -chdir=environments/dev output -raw db_instance_connection_name
-              value: "<INSTANCE_CONNECTION_NAME>"
+              value: "gke-petproject-2026-497418:europe-west1:gke-pet-db-009714ad"
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false

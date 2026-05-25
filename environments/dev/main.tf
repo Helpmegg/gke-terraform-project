@@ -23,6 +23,10 @@ module "db" {
   project_id = var.project_id
   vpc_id     = module.vpc.network_id
   region     = "europe-west1"
+
+  # Чекаємо завершення VPC Peering (Private Services Connection),
+  # інакше Cloud SQL не зможе отримати приватний IP.
+  depends_on = [module.vpc]
 }
 
 module "gke" {
@@ -49,4 +53,18 @@ module "registry" {
   source     = "../../modules/registry"
   project_id = var.project_id
   region     = "europe-west1"
+}
+
+# Ключовий момент Zero-Trust: Дозволяємо KSA (web-app-ksa) діяти як GSA (gke-nodes-sa).
+# Винесено з модуля IAM, бо Workload Identity Pool створюється разом з GKE-кластером,
+# і binding має залежати від кластера — інакше виникає циклічна залежність IAM ↔ GKE.
+resource "google_service_account_iam_binding" "workload_identity_binding" {
+  service_account_id = module.iam.sa_id
+  role               = "roles/iam.workloadIdentityUser"
+
+  members = [
+    "serviceAccount:${var.project_id}.svc.id.goog[default/web-app-ksa]"
+  ]
+
+  depends_on = [module.gke]
 }

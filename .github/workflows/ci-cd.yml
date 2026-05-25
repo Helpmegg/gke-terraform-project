@@ -6,13 +6,13 @@ on:
       - main
 
 env:
-  GCP_PROJECT_ID: "gke-petproject-2026"
-  TF_VAR_project_id: "gke-petproject-2026"
+  GCP_PROJECT_ID: "gke-petproject-2026-497418"
+  TF_VAR_project_id: "gke-petproject-2026-497418"
   GKE_CLUSTER: "gke-pet-cluster"
   GKE_REGION: "europe-west1-b"
   TF_WORKING_DIR: "environments/dev"
   K8S_DIR: "k8s"
-  IMAGE_NAME: "europe-west1-docker.pkg.dev/gke-petproject-2026/my-repo/my-app"
+  IMAGE_NAME: "europe-west1-docker.pkg.dev/gke-petproject-2026-497418/my-repo/my-app"
   USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
 
 jobs:
@@ -115,7 +115,7 @@ jobs:
       - name: Deploy to GKE
         run: |
           IMAGE_TAG=$(git rev-parse --short HEAD)
-          sed -i "s|europe-west1-docker.pkg.dev/gke-petproject-2026/my-repo/my-app:latest|${{ env.IMAGE_NAME }}:${IMAGE_TAG}|g" ${{ env.K8S_DIR }}/deployment.yaml
+          sed -i "s|europe-west1-docker.pkg.dev/gke-petproject-2026-497418/my-repo/my-app:latest|${{ env.IMAGE_NAME }}:${IMAGE_TAG}|g" ${{ env.K8S_DIR }}/deployment.yaml
           sed -i "s|<INSTANCE_CONNECTION_NAME>|${{ steps.terraform-outputs.outputs.db_instance_connection_name }}|g" ${{ env.K8S_DIR }}/deployment.yaml
           sed -i "s|<DB_PASSWORD_SECRET_ID>|${{ steps.terraform-outputs.outputs.db_password_secret_id }}|g" ${{ env.K8S_DIR }}/dependencies.yaml
           
