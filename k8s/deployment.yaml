@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         app: web
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: web-app-ksa
       securityContext:
@@ -51,10 +55,10 @@ spec:
               memory: "256Mi"
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /ready
               port: 8080
             initialDelaySeconds: 5
-            periodSeconds: 10
+            periodSeconds: 5
             failureThreshold: 3
           livenessProbe:
             httpGet:

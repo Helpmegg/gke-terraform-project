@@ -3,13 +3,11 @@ module "vpc" {
   source = "../../modules/vpc"
 
   project_id    = var.project_id
-  network_name  = "main-vpc"
+  network_name  = "prod-vpc"
   region        = "europe-west1"
-  # Розширено з /28 (лише 14 IP!) до /24 (254 IP).
-  # /28 вичерпується 3 нодами + системними podами і нові ноди не отримують IP.
-  subnet_cidr   = "10.0.0.0/24"
-  pods_cidr     = "10.1.0.0/20"
-  services_cidr = "10.2.0.0/24"
+  subnet_cidr   = "10.20.0.0/24"
+  pods_cidr     = "10.21.0.0/20"
+  services_cidr = "10.22.0.0/24"
 }
 
 module "iam" {
@@ -23,11 +21,9 @@ module "db" {
   project_id          = var.project_id
   vpc_id              = module.vpc.network_id
   region              = "europe-west1"
-  db_tier             = "db-f1-micro"
-  deletion_protection = false
+  db_tier             = "db-custom-1-3840"  # Більш потужна БД для production
+  deletion_protection = true                # Захист від випадкового видалення!
 
-  # Чекаємо завершення VPC Peering (Private Services Connection),
-  # інакше Cloud SQL не зможе отримати приватний IP.
   depends_on = [module.vpc]
 }
 
@@ -36,7 +32,7 @@ module "gke" {
 
   project_id   = var.project_id
   region       = "europe-west1-b"
-  cluster_name = "gke-pet-cluster"
+  cluster_name = "gke-prod-cluster"
 
   network_name = module.vpc.network_name
   subnet_name  = module.vpc.subnet_name
@@ -46,10 +42,10 @@ module "gke" {
 
   service_account_email = module.iam.sa_email
 
-  # Autoscaling
-  use_spot_instances    = true
-  autoscaling_min_nodes = 1
-  autoscaling_max_nodes = 3
+  # Production: без Spot, більший масштаб
+  use_spot_instances    = false  # Стабільні ноди для production
+  autoscaling_min_nodes = 2     # Мінімум 2 ноди для HA
+  autoscaling_max_nodes = 5     # Дозволяємо масштабуватися до 5
 
   db_instance_connection_name = module.db.instance_connection_name
   db_name                     = module.db.db_name
@@ -63,9 +59,7 @@ module "registry" {
   region     = "europe-west1"
 }
 
-# Ключовий момент Zero-Trust: Дозволяємо KSA (web-app-ksa) діяти як GSA (gke-nodes-sa).
-# Винесено з модуля IAM, бо Workload Identity Pool створюється разом з GKE-кластером,
-# і binding має залежати від кластера — інакше виникає циклічна залежність IAM ↔ GKE.
+# Workload Identity binding
 resource "google_service_account_iam_binding" "workload_identity_binding" {
   service_account_id = module.iam.sa_id
   role               = "roles/iam.workloadIdentityUser"

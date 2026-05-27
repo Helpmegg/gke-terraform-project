@@ -1,7 +1,7 @@
 # 1. Сам Кластер (Control Plane)
 resource "google_container_cluster" "primary" {
   provider = google-beta
-  name     = "gke-pet-cluster"
+  name     = var.cluster_name
   location = var.region
 
   initial_node_count       = 1
@@ -52,16 +52,25 @@ resource "google_container_cluster" "primary" {
   secret_manager_config {
     enabled = true
   }
+
+  # Увімкнення Network Policies через Dataplane V2 (Calico)
+  # Dataplane V2 автоматично підтримує Kubernetes Network Policies
+  datapath_provider = "ADVANCED_DATAPATH"
 }
 
 resource "google_container_node_pool" "workload_nodes" {
-  name       = "workload-pool"
-  location   = var.region
-  cluster    = google_container_cluster.primary.name
-  node_count = 2
+  name     = "workload-pool"
+  location = var.region
+  cluster  = google_container_cluster.primary.name
+
+  # Cluster Autoscaler — автоматичне масштабування кількості нод
+  autoscaling {
+    min_node_count = var.autoscaling_min_nodes
+    max_node_count = var.autoscaling_max_nodes
+  }
 
   node_config {
-    spot         = true
+    spot         = var.use_spot_instances
     machine_type = "e2-standard-2"
     disk_size_gb = 30
     disk_type    = "pd-standard"
@@ -97,3 +106,4 @@ resource "google_container_node_pool" "system_nodes" {
     }
   }
 }
+

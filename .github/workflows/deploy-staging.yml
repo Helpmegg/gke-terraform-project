@@ -1,16 +1,16 @@
-name: Deploy to GKE
+name: Deploy to Staging
 
 on:
   push:
     branches:
-      - main
+      - staging
 
 env:
   GCP_PROJECT_ID: "gke-petproject-2026-497418"
   TF_VAR_project_id: "gke-petproject-2026-497418"
-  GKE_CLUSTER: "gke-pet-cluster"
+  GKE_CLUSTER: "gke-staging-cluster"
   GKE_REGION: "europe-west1-b"
-  TF_WORKING_DIR: "environments/dev"
+  TF_WORKING_DIR: "environments/staging"
   K8S_DIR: "k8s"
   IMAGE_NAME: "europe-west1-docker.pkg.dev/gke-petproject-2026-497418/my-repo/my-app"
   USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
@@ -30,7 +30,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_wrapper: false # Це вимкне спроби GitHub "розумно" парсити вивід
+          terraform_wrapper: false
 
       - name: Run TFLint
         run: |
@@ -77,14 +77,14 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Terraform validate (dev)
+      - name: Terraform validate (staging)
         run: |
-          cd environments/dev
+          cd environments/staging
           terraform init -backend=false
           terraform validate
 
   deploy:
-    name: Deploy Infrastructure and Application
+    name: Deploy to Staging
     needs: [lint-and-scan, test]
     runs-on: ubuntu-latest
     permissions:

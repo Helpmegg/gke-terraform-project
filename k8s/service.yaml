@@ -10,6 +10,7 @@ spec:
   selector:
     app: web # Знаходить поди з цією міткою
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 8080    # Перенаправляє трафік на порт 8080 контейнера
       protocol: TCP

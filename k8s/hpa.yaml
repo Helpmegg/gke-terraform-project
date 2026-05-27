@@ -1,0 +1,42 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-app-hpa
+  labels:
+    app: web
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  # Поведінка масштабування — запобігає "flapping" (швидкі коливання)
+  behavior:
+    scaleUp:
+      # Дозволяємо швидке масштабування при різкому навантаженні
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 4          # Максимум +4 поди за один крок
+          periodSeconds: 60
+    scaleDown:
+      # Повільне зменшення — захист від передчасного видалення подів
+      stabilizationWindowSeconds: 300  # Чекаємо 5 хвилин стабільно низького навантаження
+      policies:
+        - type: Pods
+          value: 1           # Максимум -1 под за крок
+          periodSeconds: 60  # Не частіше ніж раз на хвилину

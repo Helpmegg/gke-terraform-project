@@ -38,10 +38,10 @@ resource "google_sql_database_instance" "main" {
   region           = var.region
   project          = var.project_id
 
-  deletion_protection = false # Тільки для Pet Project!
+  deletion_protection = var.deletion_protection
 
   settings {
-    tier = "db-f1-micro" # Найдешевший варіант
+    tier = var.db_tier
 
     ip_configuration {
       ipv4_enabled    = false       # Вимикаємо публічний IP (Безпека!)

@@ -1,0 +1,86 @@
+# =============================================================================
+# Network Policy 1: Default Deny All Ingress
+# Забороняє ВЕСЬ вхідний трафік до всіх подів у namespace default.
+# Це реалізує принцип Zero Trust — дозволено лише те, що явно описано.
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all-ingress
+  namespace: default
+spec:
+  podSelector: {}  # Застосовується до ВСІХ подів у namespace
+  policyTypes:
+    - Ingress
+  # Немає блоку ingress — значить весь вхідний трафік заборонено
+
+---
+# =============================================================================
+# Network Policy 2: Allow Ingress to Web App
+# Дозволяє трафік до подів з міткою app=web на порт 8080.
+# Джерела:
+#   - Будь-який под у namespace (для cloud-sql-proxy sidecar та internal comms)
+#   - GKE Ingress Controller (зовнішній трафік через Load Balancer)
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-web-app-ingress
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: web  # Застосовується тільки до подів web-app
+  policyTypes:
+    - Ingress
+  ingress:
+    # Правило 1: Дозволити трафік від будь-якого поду в namespace
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Правило 2: Дозволити трафік від GKE Ingress / Load Balancer
+    # GKE LB health checks та трафік приходять з IP-діапазонів Google,
+    # які не є частиною кластера. ipBlock дозволяє цей трафік.
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Правило 3: Дозволити трафік від Prometheus (namespace: monitoring)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# =============================================================================
+# Network Policy 3: Allow DNS Egress
+# Дозволяє всім подам робити DNS-запити (необхідно для роботи сервісів).
+# Без цього правила при додаванні Egress deny — DNS перестане працювати.
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: default
+spec:
+  podSelector: {}  # Застосовується до ВСІХ подів
+  policyTypes:
+    - Egress
+  egress:
+    # Дозволити DNS (UDP та TCP на порт 53)
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Дозволити весь інший egress трафік (щоб не зламати cloud-sql-proxy та інші з'єднання)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0

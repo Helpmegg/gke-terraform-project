@@ -1,4 +1,4 @@
-name: Deploy to GKE
+name: CD - Deploy to GKE
 
 on:
   push:
@@ -23,27 +23,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+          terraform_wrapper: false
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Init (validation only)
+        run: terraform init -backend=false
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v3
         with:
           tflint_version: latest
 
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false # Це вимкне спроби GitHub "розумно" парсити вивід
-
       - name: Run TFLint
         run: |
-          cd ${{ env.TF_WORKING_DIR }}
           tflint --init
           tflint -f compact
+        working-directory: ${{ env.TF_WORKING_DIR }}
 
       - name: Run Hadolint
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: app/Dockerfile
 
-      - name: Run Trivy vulnerability scanner on Repo
+      - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
@@ -54,38 +68,9 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install -r app/requirements.txt
-
-      - name: Run unit tests
-        run: pytest app/test_app.py -v
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
-
-      - name: Terraform validate (dev)
-        run: |
-          cd environments/dev
-          terraform init -backend=false
-          terraform validate
-
   deploy:
     name: Deploy Infrastructure and Application
-    needs: [lint-and-scan, test]
+    needs: lint-and-scan
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'

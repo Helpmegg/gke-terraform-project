@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: web-app-monitor
+  namespace: default
+  labels:
+    release: prometheus # Цей лейбл важливий, оскільки Helm chart шукає його за замовчуванням
+spec:
+  selector:
+    matchLabels:
+      app: web
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

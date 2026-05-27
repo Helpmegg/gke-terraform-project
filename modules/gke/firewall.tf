@@ -9,7 +9,7 @@
 
 resource "google_compute_firewall" "allow_gclb_health_checks" {
   project     = var.project_id
-  name        = "gke-pet-cluster-allow-gclb-hc"
+  name        = "${var.cluster_name}-allow-gclb-hc"
   description = "Allow Google LB health checks to reach GKE nodes (required for GCE Ingress)"
   network     = var.network_name
 

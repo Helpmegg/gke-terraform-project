@@ -4,6 +4,8 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, func, t
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from flask import Flask, request, render_template_string
+import time
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter, Histogram
 
 # --- Функція для читання секрету з файлу ---
 def get_secret(secret_name, default_value=None):
@@ -58,6 +60,44 @@ class Visit(Base):
 
 # --- Ініціалізація Flask ---
 app = Flask(__name__)
+
+# --- Метрики Prometheus ---
+REQUEST_COUNT = Counter(
+    'app_request_count', 'Total HTTP Requests',
+    ['method', 'endpoint', 'http_status']
+)
+REQUEST_LATENCY = Histogram(
+    'app_request_latency_seconds', 'HTTP Request Latency',
+    ['method', 'endpoint']
+)
+VISIT_COUNTER = Counter(
+    'app_visits_total', 'Total visits recorded'
+)
+
+@app.before_request
+def start_timer():
+    request.start_time = time.time()
+
+@app.after_request
+def log_request(response):
+    # Не логуємо технічні ендпоінти
+    if request.path not in ['/healthz', '/ready', '/metrics']:
+        latency = time.time() - getattr(request, 'start_time', time.time())
+        REQUEST_COUNT.labels(
+            method=request.method,
+            endpoint=request.path,
+            http_status=response.status_code
+        ).inc()
+        REQUEST_LATENCY.labels(
+            method=request.method,
+            endpoint=request.path
+        ).observe(latency)
+        
+        # Якщо це головна сторінка і запит успішний
+        if request.path == '/' and response.status_code == 200:
+            VISIT_COUNTER.inc()
+            
+    return response
 
 # --- Логіка додатку ---
 HTML_TEMPLATE = """
@@ -290,6 +330,27 @@ def healthz():
     Перевірка БД тут НЕ виконується щоб health check не залежав від стану БД.
     """
     return "OK", 200
+
+@app.route('/ready')
+def ready():
+    """
+    Ендпоінт для перевірки готовності (Readiness Check).
+    Перевіряє підключення до бази даних.
+    """
+    db = get_session()
+    try:
+        db.execute(text("SELECT 1"))
+        return "OK", 200
+    except Exception as e:
+        print(f"Readiness check failed: {e}")
+        return f"Service Unavailable: DB connection failed", 503
+    finally:
+        db.close()
+
+@app.route('/metrics')
+def metrics():
+    """Ендпоінт для експорту метрик у форматі Prometheus."""
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 if __name__ == '__main__':
     # Запускаємо додаток (для локальної розробки)

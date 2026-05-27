@@ -9,6 +9,30 @@ variable "services_range_name" {}
 
 variable "service_account_email" {}
 
+variable "cluster_name" {
+  description = "Ім'я GKE кластера"
+  type        = string
+  default     = "gke-pet-cluster"
+}
+
+variable "use_spot_instances" {
+  description = "Чи використовувати Spot інстанси для workload нод"
+  type        = bool
+  default     = true
+}
+
+variable "autoscaling_min_nodes" {
+  description = "Мінімальна кількість нод для Cluster Autoscaler"
+  type        = number
+  default     = 1
+}
+
+variable "autoscaling_max_nodes" {
+  description = "Максимальна кількість нод для Cluster Autoscaler"
+  type        = number
+  default     = 3
+}
+
 variable "db_instance_connection_name" {
   description = "The connection name of the Cloud SQL instance."
   type        = string
