@@ -1,5 +1,9 @@
 name: Deploy to GKE
 
+concurrency:
+  group: deploy-gke-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
