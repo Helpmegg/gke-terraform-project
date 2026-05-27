@@ -2,9 +2,9 @@
 module "vpc" {
   source = "../../modules/vpc"
 
-  project_id    = var.project_id
-  network_name  = "main-vpc"
-  region        = "europe-west1"
+  project_id   = var.project_id
+  network_name = "main-vpc"
+  region       = "europe-west1"
   # Розширено з /28 (лише 14 IP!) до /24 (254 IP).
   # /28 вичерпується 3 нодами + системними podами і нові ноди не отримують IP.
   subnet_cidr   = "10.0.0.0/24"

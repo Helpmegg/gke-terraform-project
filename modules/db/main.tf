@@ -44,8 +44,8 @@ resource "google_sql_database_instance" "main" {
     tier = var.db_tier
 
     ip_configuration {
-      ipv4_enabled    = false       # Вимикаємо публічний IP (Безпека!)
-      private_network = var.vpc_id  # Тільки приватний доступ з VPC
+      ipv4_enabled    = false      # Вимикаємо публічний IP (Безпека!)
+      private_network = var.vpc_id # Тільки приватний доступ з VPC
     }
   }
 }

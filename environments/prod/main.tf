@@ -21,8 +21,8 @@ module "db" {
   project_id          = var.project_id
   vpc_id              = module.vpc.network_id
   region              = "europe-west1"
-  db_tier             = "db-custom-1-3840"  # Більш потужна БД для production
-  deletion_protection = true                # Захист від випадкового видалення!
+  db_tier             = "db-custom-1-3840" # Більш потужна БД для production
+  deletion_protection = true               # Захист від випадкового видалення!
 
   depends_on = [module.vpc]
 }
@@ -43,7 +43,7 @@ module "gke" {
   service_account_email = module.iam.sa_email
 
   # Production: без Spot, більший масштаб
-  use_spot_instances    = false  # Стабільні ноди для production
+  use_spot_instances    = false # Стабільні ноди для production
   autoscaling_min_nodes = 2     # Мінімум 2 ноди для HA
   autoscaling_max_nodes = 5     # Дозволяємо масштабуватися до 5
 
