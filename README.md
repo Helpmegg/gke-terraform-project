@@ -16,7 +16,7 @@ The project deploys a production-ready infrastructure:
 3. **Cloud SQL (PostgreSQL)**: A database accessible exclusively via a private IP address using the Cloud SQL Proxy.
 4. **IAM & Security**: Implementation of the Principle of Least Privilege (PoLP), Workload Identity Federation (WIF), and Secret Manager.
 
-![Architecture Diagram](Milestone 1.pdf)
+![Architecture Diagram](Milestone 1.png)
 
 ## ✨ Features
 
